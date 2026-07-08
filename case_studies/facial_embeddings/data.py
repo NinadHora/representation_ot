@@ -4,8 +4,8 @@ import numpy as np
 import json
 from collections import defaultdict, Counter
 
-EMBEDDINGS_PATH = "/home/nina.dahora/ccv2/ccv2-audit-kit/outputs/embeddings/all_embeddings.npz"
-ANNOTATIONS_PATH = "/home/nina.dahora/dataset/casual_conversations_v2/annotations/CasualConversationsV2.json"
+EMBEDDINGS_PATH = ""
+ANNOTATIONS_PATH = ""
 
 
 def load_subjects():
