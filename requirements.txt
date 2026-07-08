@@ -1,0 +1,14 @@
+# Core and case study 1 (facial embeddings)
+numpy
+matplotlib
+
+# Case study 2 (tabular repair)
+jax[cpu]>=0.4.20
+pot
+lightgbm
+equipy
+pandas
+scikit-learn
+
+# Validation tests (roadmap)
+pytest

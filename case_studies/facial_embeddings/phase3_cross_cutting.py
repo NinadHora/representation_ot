@@ -1,7 +1,7 @@
 """
-Phase 3: Cross-cutting analysis — phenotype vs nationality in embedding space.
+Phase 3: Cross-cutting analysis: phenotype versus nationality in embedding space.
 
-Reuses the pre-computed distance matrix from permutation_test.py.
+Reuses the pre-computed distance matrix from phase2_coherence.py.
 Classifies all 17,955 pairs into four quadrants by (country x Monk Scale)
 and tests which axis better organizes the space.
 """

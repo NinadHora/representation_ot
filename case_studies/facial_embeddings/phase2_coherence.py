@@ -12,8 +12,12 @@ import time
 from collections import defaultdict, Counter
 from itertools import combinations
 
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))
+
 from data import load_subjects
-from sinkhorn import wasserstein_distance
+from core.sinkhorn import wasserstein_distance
 
 OUTPUT_DIR = os.path.expanduser("~/ot_faces/output/stats")
 EPSILON = 0.1
