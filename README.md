@@ -114,14 +114,10 @@ CCv2 embeddings (512-dimensional, produced by `ccv2-audit-kit`) and annotations 
 
 ## Reference
 
-Nina da Hora (2026). "Measuring Categorical Coherence in Facial Embedding Space via Entropy-Regularized Optimal Transport." Instituto da Hora / IC-UNICAMP / DPCT-UNICAMP. Verão IMPA 2026.
-
-Additional references:
-
 - Peyre, G. and Cuturi, M. (2019). Computational Optimal Transport. Foundations and Trends in Machine Learning.
 - Agueh, M. and Carlier, G. (2011). Barycenters in the Wasserstein space. SIAM Journal on Mathematical Analysis.
 - Gordaliza, P., del Barrio, E., Gamboa, F. and Loubes, J.-M. (2019). Obtaining fairness using optimal transport theory. ICML.
 - Chzhen, E., Denis, C., Hebiri, M., Oneto, L. and Pontil, M. (2020). Fair regression with Wasserstein barycenters. NeurIPS.
 - Cuturi, M. (2013). Sinkhorn distances: lightspeed computation of optimal transport. NeurIPS.
 
-This repository is part of a broader research program on how computational systems construct, transform, deform, and erase representations, extending from facial recognition (MSc research) toward the differential geometry of representation spaces (PhD research).
+This repository is part of a broader research program on how computational systems construct, transform, deform, and erase representations, extending from facial recognition (MSc research) toward the differential geometry of representation spaces.
