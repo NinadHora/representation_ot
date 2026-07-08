@@ -1,123 +1,62 @@
-# Representation OT
+# representation_ot
 
-## Optimal Transport as a Language for the Geometry of Computational Representation
+**Optimal transport as a language for the geometry of learned representations.**
 
-**Research question:** who gets to be computationally represented, and can representational erasure be detected geometrically, in the structure of the data itself, before any classifier is trained?
+Most work at the intersection of optimal transport (OT) and machine learning fairness treats OT as a repair tool: a way to move distributions so that a downstream metric improves. This repository inverts that framing. OT is used here as a *measurement language* for the geometry of representation spaces — fairness outcomes are treated as downstream consequences of that geometry, not as the starting point.
 
-This repository investigates the geometry of representation spaces through the theory of Optimal Transport (OT). Rather than treating OT as a device for correcting fairness violations, we employ it as a mathematical language for comparing distributions of representations: for measuring when two populations occupy geometrically distinct regions of an embedding space, when a demographic category forms a geometrically coherent structure, and when such a category dissolves under closer analysis.
+The guiding thesis: **representational erasure can be detected geometrically, in the embedding space itself, before any classifier is trained.**
 
-Fairness is therefore not the premise of this work. It is one application of the framework, addressed as a downstream consequence of representational geometry.
+> ⚠️ This is an active research repository. Preliminary findings are described qualitatively below; complete results, statistical analyses, and experimental details will appear in a forthcoming preprint. If you build on the ideas or code here, please cite (see [Citation](#citation)).
 
 ## Research questions
 
-1. When do two populations possess geometrically different representations in an embedding space?
-2. How can displacement between representation spaces be measured?
-3. Can Optimal Transport detect erasure prior to classification, that is, directly in the geometry of the data?
-4. How can distributions of representations produced by different models be compared?
-5. How can information loss along a computer vision pipeline be quantified?
-
-None of these questions depends on a particular definition of fairness. They are mathematical questions about representation, subsequently applicable to facial recognition, medical imaging, multimodal models, and representation learning in general.
+1. Can category coherence (or its absence) be quantified directly from the geometry of an embedding distribution, using OT distances between subgroup distributions?
+2. How should transport-based comparisons be formulated in high-dimensional embedding spaces, where closed-form solutions and monotone rearrangements are no longer available?
+3. What do face-embedding models actually encode when trained representations are probed with demographic and geographic categories — and when do those categories dissolve?
+4. Under what conditions do 1-D score-repair results (barycenter-based post-processing) extend, fail, or require reformulation in higher dimensions?
+5. What does a geometry-first account of representational harm change about how algorithmic audits are designed?
 
 ## Repository structure
 
 ```
-representation-ot/
-    core/                                Mathematical core, independent of any application
-        sinkhorn.py                      Sinkhorn algorithm, entropy-regularized Wasserstein
-                                         distance, and Wasserstein barycenters, implemented
-                                         from scratch in NumPy
-
-    case_studies/
-        facial_embeddings/               Case study 1: Casual Conversations v2
-            data.py                      Data loading (CCv2 embeddings and annotations)
-            phase1_exploratory.py        Sampled pairwise distances, intra/inter ratios,
-                                         prototype-based classification
-            phase2_coherence.py          Full pairwise distance matrix (17,955 pairs),
-                                         permutation tests, bootstrap confidence intervals
-            phase3_cross_cutting.py      Four-quadrant analysis (country x Monk Scale),
-                                         Brazil deep dive
-            phase4_downstream_fairness.py  Demographic parity, conditional DP,
-                                           counterfactual decomposition
-            visualize.py                 Plot generation from CSV outputs
-
-        tabular_repair/                  Case study 2: score repair via Wasserstein barycenters
-            sinkhorn_fairness.py         JAX pipeline: entropic barycenters, monotone Monge
-                                         maps via barycentric projection and isotonic regression
-            fairness_fairface_ot.ipynb   End-to-end notebook
-
-    demos/                               Synthetic examples, runnable without dataset access (planned)
-    tests/                               Validation of core/ against the POT library (planned)
-    requirements.txt
+core/           From-scratch NumPy implementation of entropic OT (Sinkhorn),
+                written for transparency and pedagogy rather than speed.
+case_studies/   Applied studies using the core machinery (see below).
+demos/          Self-contained synthetic examples (in progress).
 ```
 
-## Case study 1: geometric coherence of demographic categories
+## Case studies
 
-Face embedding models map faces into a 512-dimensional space. Demographic annotations (country, skin tone) partition the subjects, but the central question is whether the geometry of the embedding space sustains those partitions.
+### 1 · Geometric coherence of demographic categories in face embeddings
 
-Applied to 190 subjects from [Casual Conversations v2](https://ai.meta.com/datasets/casual-conversations-v2-dataset/) (Meta), the pipeline computes entropy-regularized Wasserstein distances between subject-level embedding distributions and tests, via permutation, whether national and linguistic categories form geometrically coherent structures.
+Face embeddings from Casual Conversations v2 (CCv2) are analyzed at the subject level: each subject's embeddings are treated as a distribution, and entropic Wasserstein distances between subject-level distributions are tested (via permutation tests) for alignment with national and linguistic category structure.
 
-### Results
+**Preliminary finding (qualitative):** category coherence in the embedding geometry tracks phenotypic homogeneity rather than the categories themselves. Nationality behaves as a geometric category only where it is phenotypically homogeneous; phenotypically heterogeneous categories dissolve. Full quantitative results are reserved for the forthcoming preprint.
 
-The embedding model does not classify nationality. It classifies phenotype and acquisition conditions, and this functions as a proxy for nationality only when the country is phenotypically homogeneous. When it is not (Brazil), the category dissolves.
+### 2 · Score repair via Wasserstein barycenters
 
-| Country   |  n  |  rho  |  p      | Accuracy |
-|-----------|-----|-------|---------|----------|
-| Indonesia |  25 | 0.767 | < 0.001 | 92.0%    |
-| India     | 110 | 0.869 | < 0.001 | 75.5%    |
-| Mexico    |  14 | 0.890 | 0.004   | 42.9%    |
-| Brazil    |  41 | 0.963 | 0.009   | 34.1%    |
-
-Demographic parity gap: 57.9pp. Conditional DP gap, controlling for skin tone: 61.1pp, indicating that phenotype does not mediate the disparity.
-
-In the terms of this repository, the dissolution of the Brazilian category is an instance of representational erasure detected in the geometry of the embeddings, prior to the training of any classifier. This reframes algorithmic auditing: instead of asking whether the output of a model is fair, one asks whether the representation space sustains the category at all.
-
-### Pipeline
-
-All phases after Phase 2 reuse the pre-computed distance matrix, with no Sinkhorn recomputation. Full distance matrix: 8 seconds. Permutation tests (1000 iterations): approximately 3 minutes (RECOD.AI cluster, NVIDIA Quadro P5000).
-
-To run a phase from the repository root:
-
-```
-python case_studies/facial_embeddings/phase2_coherence.py
-```
-
-## Case study 2: score repair via Wasserstein barycenters
-
-The classical fairness-via-OT construction (Gordaliza et al., 2019; Chzhen et al., 2020) post-processes the scores of a trained model by transporting the score distribution of each group to the Wasserstein barycenter, achieving demographic parity with minimal information loss. The implementation, in JAX, computes entropic barycenters via Sinkhorn iterations and extracts monotone Monge maps through barycentric projection followed by isotonic regression, benchmarked against [EquiPy](https://github.com/EquiPy/EquiPy).
-
-Within the framework of this repository, the case study makes explicit the contrast between dimension one, where the optimal transport map admits a closed form given by composition of quantile functions, and high dimension, where no ordering, no closed form, and no unique tractable map exist. The open research questions of this project live precisely in that gap.
-
-## Mathematical core
-
-`core/sinkhorn.py` implements, from scratch and with NumPy as its only dependency:
-
-- entropy-regularized optimal transport (Sinkhorn iterations);
-- the regularized Wasserstein distance;
-- Wasserstein barycenters (Agueh and Carlier, 2011, in the entropic version).
-
-The core carries no dependence on any dataset or fairness definition.
-
-## Roadmap
-
-- Synthetic demonstration in `demos/`, reproducible without access to CCv2: a Gaussian mixture with a deliberately incoherent category that the pipeline must detect.
-- Tests validating `core/` against the [POT](https://pythonot.github.io/) library.
-- Multi-architecture comparison (FaceNet, ArcFace, VGGFace2): does geometric incoherence persist across embedding models? (research question 4)
-- Transport beyond dimension one: sliced Wasserstein and neural OT maps directly in the 512-dimensional embedding space (research question 2).
-
-## Requirements
-
-Case study 1 requires only NumPy and matplotlib; the Sinkhorn algorithm is implemented from scratch, with no OT library dependencies. Case study 2 additionally requires JAX, POT, LightGBM, and EquiPy. See `requirements.txt`.
+A from-scratch reimplementation of barycenter-based fair score post-processing (Gordaliza et al.; Chzhen et al.) in JAX, using monotone (Monge) transport maps and isotonic regression, validated against the EquiPy reference implementation. This case study is included as a working demonstration of the 1-D theory — and of the gap between 1-D closed-form results and the high-dimensional setting, where the open questions of this project live.
 
 ## Data
 
-CCv2 embeddings (512-dimensional, produced by `ccv2-audit-kit`) and annotations are not included, in accordance with Meta's data use agreement. Paths are configured for the RECOD.AI cluster in `case_studies/facial_embeddings/data.py`. The planned `demos/` folder will allow the full pipeline to be exercised on synthetic data without dataset access.
+CCv2 embeddings, annotations, and any derived artifacts are **not** included in this repository, in accordance with the dataset's Data Use Agreement. Access to CCv2 must be requested directly from Meta AI. All code here operates on locally provided paths and runs end-to-end on synthetic data (see `demos/`).
 
-## Reference
+## Ongoing work
 
-- Peyre, G. and Cuturi, M. (2019). Computational Optimal Transport. Foundations and Trends in Machine Learning.
-- Agueh, M. and Carlier, G. (2011). Barycenters in the Wasserstein space. SIAM Journal on Mathematical Analysis.
-- Gordaliza, P., del Barrio, E., Gamboa, F. and Loubes, J.-M. (2019). Obtaining fairness using optimal transport theory. ICML.
-- Chzhen, E., Denis, C., Hebiri, M., Oneto, L. and Pontil, M. (2020). Fair regression with Wasserstein barycenters. NeurIPS.
-- Cuturi, M. (2013). Sinkhorn distances: lightspeed computation of optimal transport. NeurIPS.
+Extensions toward cross-model comparison and high-dimensional transport are in progress. Details will be released together with the preprint.
 
-This repository is part of a broader research program on how computational systems construct, transform, deform, and erase representations, extending from facial recognition (MSc research) toward the differential geometry of representation spaces.
+## References
+
+- Cuturi, M. (2013). *Sinkhorn Distances: Lightspeed Computation of Optimal Transport.* NeurIPS.
+- Peyré, G., & Cuturi, M. (2019). *Computational Optimal Transport.* Foundations and Trends in Machine Learning.
+- Gordaliza, P., del Barrio, E., Fabrice, G., & Loubes, J.-M. (2019). *Obtaining Fairness using Optimal Transport Theory.* ICML.
+- Chzhen, E., Denis, C., Hebiri, M., Oneto, L., & Pontil, M. (2020). *Fair Regression with Wasserstein Barycenters.* NeurIPS.
+- Hazirbas, C., et al. (2022). *Casual Conversations v2.* Meta AI.
+
+## Citation
+
+If you use this code or build on this framing, please cite via the `CITATION.cff` file in this repository (GitHub's "Cite this repository" button), or the Zenodo DOI of the latest release.
+
+## License
+
+MIT — see `LICENSE`.
